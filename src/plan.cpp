@@ -1,56 +1,54 @@
 #include <iostream>
 #include <vector>
-#include <map>
-
+#include <string>
 using namespace std;
 
-map<string, double> materialRequirements;
-map<string, double> shortage;
+struct Materials {
+  string name;
+  double inventory;
+  double production_capacity;
+  double usage_rate;
+  int cost;
+};
 
-void calculate(double demand, map<string, double> materials,
-                              map<string, double> inventory,
-                              map<string, double> productionCapacity) {
-    for (auto material : materials) {
-        double materialRequirement = demand * material.second;
-        materialRequirements[material.first] = materialRequirement;
-    }
+struct Commodity {
+  string name;
+  vector<Materials> materials;
+  int labor;
+  double demand;
+};
 
-    for (auto materialRequirement : materialRequirements) {
-        double available_supply = inventory[materialRequirement.first] + productionCapacity[materialRequirement.first];
-        if (available_supply < materialRequirement.second) {
-            shortage[materialRequirement.first] = materialRequirement.second - available_supply;
-        }
-    }
-
-    if (!shortage.empty()) {
-        cout << "There is a shortage of the following materials:" << endl;
-        for (auto shortfall : shortage) {
-            cout << "-" << shortfall.first << ": " << shortfall.second << endl;
-        }
-    } else {
-        cout << "There is enough supply to meet the demand." << endl;
-    }
-}
-
-double exponentialSmoothing(const vector<double> &history, double alpha) {
-    double forecast = history[0];
-    for (int i = 1; i < history.size(); i++) {
-        forecast = alpha * history[i] + (1 - alpha) * forecast;
-    }
-    return forecast;
+double materialBalancePlanning(const Materials &material, double demand) {
+  double shortage = 0.0;
+  double requiredAmount = demand * material.usage_rate;
+  double availableAmount = material.inventory + material.production_capacity;
+  if (availableAmount < requiredAmount) {
+    shortage = requiredAmount - availableAmount;
+  }
+  return shortage;
 }
 
 int main() {
-  //alpha being 1 gives more weight to close data while 0 gives more weight to historical data
-    double alpha = 0.5;
-    vector<double> history = {100, 120, 130, 140, 150};
-    double demand = exponentialSmoothing(history, alpha);
-    //measurments are in kilograms
-    map<string, double> materials = {{"Material A", 0.5}, {"Material B", 0.3}, {"Material C", 0.2}};
-    map<string, double> inventory = {{"Material A", 50}, {"Material B", 30}, {"Material C", 20}};
-    map<string, double> productionCapacity = {{"Material A", 20}, {"Material B", 20}, {"Material C", 20}};
-
-    calculate(demand, materials, inventory, productionCapacity);
-
-    return 0;
+  vector<Materials> materials = {
+    {"Material A", 50, 100, 0.5, 15},
+    {"Material B", 40, 150, 0.6, 14},
+    {"Material C", 60, 200, 0.7, 18}
+  };
+  vector<Commodity> commodities = {
+    {"Chair", materials, 13, 100},
+    {"Table", materials, 16, 200}
+  };
+  float cost;
+  for (int i = 0; i < commodities.size(); i++) {
+  for (const auto &material : commodities[i].materials) {
+    double shortage = materialBalancePlanning(material, commodities[i].demand);
+    if (shortage > 0) {
+      cout << "Shortage of " << material.name << " for commodity " << commodities[i].name << ": " << shortage << endl;
+      cost += shortage * material.cost;
+      cout << "You will need " << shortage * material.cost << " to fix this shortage" << endl;
+    } else {
+      cout << "There are no shortages of " << material.name << endl;
+    }
+  }}
+  return 0;
 }
