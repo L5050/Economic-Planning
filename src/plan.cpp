@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <map>
 
 using namespace std;
@@ -31,8 +32,20 @@ void calculate(double demand, map<string, double> materials,
     }
 }
 
+double exponentialSmoothing(const vector<double> &history, double alpha) {
+    double forecast = history[0];
+    for (int i = 1; i < history.size(); i++) {
+        forecast = alpha * history[i] + (1 - alpha) * forecast;
+    }
+    return forecast;
+}
+
 int main() {
-    double demand = 100;
+  //alpha being 1 gives more weight to close data while 0 gives more weight to historical data
+    double alpha = 0.5;
+    vector<double> history = {100, 120, 130, 140, 150};
+    double demand = exponentialSmoothing(history, alpha);
+    //measurments are in kilograms
     map<string, double> materials = {{"Material A", 0.5}, {"Material B", 0.3}, {"Material C", 0.2}};
     map<string, double> inventory = {{"Material A", 50}, {"Material B", 30}, {"Material C", 20}};
     map<string, double> productionCapacity = {{"Material A", 20}, {"Material B", 20}, {"Material C", 20}};
