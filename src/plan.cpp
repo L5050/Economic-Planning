@@ -15,8 +15,7 @@ void calculate(double demand, map<string, double> materials,
     }
 
     for (auto materialRequirement : materialRequirements) {
-        double available_supply = inventory[materialRequirement.first] +
-                                  productionCapacity[materialRequirement.first];
+        double available_supply = inventory[materialRequirement.first] + productionCapacity[materialRequirement.first];
         if (available_supply < materialRequirement.second) {
             shortage[materialRequirement.first] = materialRequirement.second - available_supply;
         }
