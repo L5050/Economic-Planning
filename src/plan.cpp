@@ -38,7 +38,7 @@ int main() {
     {"Chair", materials, 13, 100},
     {"Table", materials, 16, 200}
   };
-  float cost;
+  double cost = 0;
   for (int i = 0; i < commodities.size(); i++) {
   for (const auto &material : commodities[i].materials) {
     double shortage = materialBalancePlanning(material, commodities[i].demand);
@@ -50,5 +50,6 @@ int main() {
       cout << "There are no shortages of " << material.name << endl;
     }
   }}
+  cout << "Total cost for plan: " << cost << endl;
   return 0;
 }
