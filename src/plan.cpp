@@ -25,8 +25,10 @@ map < string, Commodity > commodityDatabase;
 
 double materialBalancePlanning(const Materials & material, double demand) {
   double shortage = 0.0;
+  double inventory = material.inventory;
+  if (materialDatabase[material.name].inventory != inventory) inventory = materialDatabase[material.name].inventory;
   double requiredAmount = demand * material.usage_rate;
-  double availableAmount = material.inventory + material.production_capacity;
+  double availableAmount = inventory + material.production_capacity;
   if (availableAmount < requiredAmount) {
     shortage = requiredAmount - availableAmount;
   }
@@ -34,36 +36,68 @@ double materialBalancePlanning(const Materials & material, double demand) {
 }
 
 int main() {
-  materialDatabase["Material A"] = { "Material A", 50, 100, 0.5, 15 };
-  materialDatabase["Material B"] = { "Material B", 40, 150, 0.6, 14 };
-  materialDatabase["Material C"] = { "Material C", 60, 200, 0.7, 18 };
+  materialDatabase["Material A"] = {
+    "Material A",
+    50,
+    100,
+    0.5,
+    15
+  };
+  materialDatabase["Material B"] = {
+    "Material B",
+    40,
+    150,
+    0.6,
+    14
+  };
+  materialDatabase["Material C"] = {
+    "Material C",
+    60,
+    200,
+    0.7,
+    18
+  };
 
   vector < Materials > materials;
-  materials.push_back(materialDatabase["Material A"]);
-  materials.push_back(materialDatabase["Material B"]);
+  materials.assign({
+    materialDatabase["Material A"],
+    materialDatabase["Material B"]
+  });
+  commodityDatabase["Chair"] = {
+    "Chair",
+    materials,
+    13,
+    1100
+  };
 
-  commodityDatabase["Chair"] = { "Chair", materials, 13, 100 };
+  materials.assign({
+    materialDatabase["Material A"],
+    materialDatabase["Material C"]
+  });
+  commodityDatabase["Table"] = {
+    "Table",
+    materials,
+    16,
+    200
+  };
 
-  materials.clear();
-  materials.push_back(materialDatabase["Material A"]);
-  materials.push_back(materialDatabase["Material C"]);
-
-  commodityDatabase["Table"] = { "Table", materials, 16, 200 };
-
-  double cost = 0;
-  for (auto & c: commodityDatabase) {
-    Commodity commodity = c.second;
-    for (const auto & material: commodity.materials) {
-      double shortage = materialBalancePlanning(material, commodity.demand);
-      if (shortage > 0) {
-        cout << "Shortage of " << material.name << " for commodity " << commodity.name << ": " << shortage << endl;
-        cost += shortage * material.cost;
-        cout << "You will need " << shortage * material.cost << " to fix this shortage" << endl;
-      } else {
-        cout << "There are no shortages of " << material.name << endl;
-      }
+  double totalCost = 0;
+for (const auto & c: commodityDatabase) {
+  const Commodity commodity = c.second;
+  cout << "Commodity: " << commodity.name << endl;
+  for (const auto & material: commodity.materials) {
+    double shortage = materialBalancePlanning(material, commodity.demand);
+    if (shortage > 0) {
+      cout << " Shortage of " << material.name << ": " << shortage << endl;
+      totalCost += shortage * material.cost;
+      cout << " Cost to fix shortage: " << shortage * material.cost << endl;
+    } else {
+      cout << " No shortage of " << material.name << endl;
     }
+    materialDatabase[material.name].inventory -= commodity.demand * material.usage_rate;
   }
-  cout << "Total cost for plan: " << cost << endl;
+  cout << " Total cost for " << commodity.name << ": " << totalCost << endl;
+}
+cout << "Total cost for all commodities: " << totalCost << endl;
   return 0;
 }
