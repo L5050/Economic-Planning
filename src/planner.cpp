@@ -1,3 +1,4 @@
+//Based on the BFS system under Che Guevara
 #include <iostream>
 #include <vector>
 #include <string>
@@ -24,6 +25,12 @@ struct Materials {
   int cost;
 };
 
+struct Worker {
+  string name;
+  int hoursWorked;
+  double wage;
+};
+
 struct Commodity {
   string name;
   vector<string> materialNames;
@@ -32,7 +39,22 @@ struct Commodity {
   int laborAvailable;
   double demand;
   int priority;
+  vector<Worker> workers;
 };
+
+void calculateWages(vector<Worker>& workers, int laborRequired, double demand) {
+  int totalHoursWorked = 0;
+  for (const auto& worker : workers) {
+    totalHoursWorked += worker.hoursWorked;
+  }
+  double wagePerHour;
+  double totalWageBudget = (double)laborRequired * demand;
+  if (totalHoursWorked == 0) {wagePerHour = 0;} else {wagePerHour = totalWageBudget / totalHoursWorked;}
+
+  for (auto& worker : workers) {
+    worker.wage = wagePerHour * worker.hoursWorked;
+  }
+}
 
 map<string, Materials> materialDatabase;
 map<string, Commodity> commodityDatabase;
@@ -84,6 +106,16 @@ int main() {
     18
   };
 
+  vector<Worker> chairWorkers = {
+    {"Worker 1", 40, 0},
+    {"Worker 2", 40, 0}
+  };
+
+  vector<Worker> breadWorkers = {
+    {"Worker 3", 40, 0},
+    {"Worker 4", 40, 0}
+  };
+
   commodityDatabase["Chair"] = {
     "Chair",
     {"Material A", "Material B"},
@@ -91,7 +123,8 @@ int main() {
     13,
     1000,
     100,
-    CONSUMER_GOODS_AND_SERVICES
+    CONSUMER_GOODS_AND_SERVICES,
+    chairWorkers,
   };
 
   commodityDatabase["Bread"] = {
@@ -101,10 +134,10 @@ int main() {
     16,
     5000,
     201,
-    BASIC_NEEDS
+    BASIC_NEEDS,
+    breadWorkers,
   };
-
-    vector<pair<string, Commodity>> commodityVector(commodityDatabase.begin(), commodityDatabase.end());
+  vector<pair<string, Commodity>> commodityVector(commodityDatabase.begin(), commodityDatabase.end());
   sort(commodityVector.begin(), commodityVector.end(), compareCommodity);
 
   double totalCost = 0;
@@ -138,6 +171,12 @@ int main() {
     totalCost += commodityCost;
     double price = calculatePrice(commodity);
     cout << " Price for " << commodity.name << ": " << price << endl;
+
+    // Calculate wages for this commodity
+    calculateWages(commodity.workers, commodity.laborRequired, commodity.demand);
+    for (const auto& worker : commodity.workers) {
+      cout << " Wage for " << worker.name << ": " << worker.wage << endl;
+    }
   }
   cout << "Total cost for all commodities: " << totalCost << endl;
   return 0;
