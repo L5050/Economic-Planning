@@ -10,6 +10,10 @@
 #define EDUCATION_AND_HEALTH 4
 #define CONSUMER_GOODS_AND_SERVICES 5
 #define LUXURY_GOODS_AND_SERVICES 6
+#define INFRASTRUCTURE_AND_DEVELOPMENT 7
+#define RESEARCH_AND_INNOVATION 8
+#define ENVIRONMENTAL_CONSERVATION 9
+#define EMERGENCY_SERVICES_AND_DISASTER_MANAGEMENT 10
 
 using namespace std;
 
@@ -23,22 +27,21 @@ struct Materials {
 
 struct Commodity {
   string name;
-  vector < Materials > materials;
+  vector<string> materialNames;
   int laborRequired;
   int laborAvailable;
   double demand;
   int priority;
 };
 
-map < string, Materials > materialDatabase;
-map < string, Commodity > commodityDatabase;
+map<string, Materials> materialDatabase;
+map<string, Commodity> commodityDatabase;
 
-double materialBalancePlanning(const Materials & material, double demand) {
+double materialBalancePlanning(const string & materialName, double demand) {
+  Materials & material = materialDatabase[materialName];
   double shortage = 0.0;
-  double inventory = material.inventory;
-  if (materialDatabase[material.name].inventory != inventory) inventory = materialDatabase[material.name].inventory;
   double requiredAmount = demand * material.usage_rate;
-  double availableAmount = inventory + material.production_capacity;
+  double availableAmount = material.inventory + material.production_capacity;
   if (availableAmount < requiredAmount) {
     shortage = requiredAmount - availableAmount;
   }
@@ -47,7 +50,8 @@ double materialBalancePlanning(const Materials & material, double demand) {
 
 double calculatePrice(const Commodity & commodity) {
   double totalCost = 0.0;
-  for (const Materials & material : commodity.materials) {
+  for (const string & materialName : commodity.materialNames) {
+    Materials & material = materialDatabase[materialName];
     totalCost += material.usage_rate * material.cost;
   }
   return totalCost + commodity.laborRequired;
@@ -82,27 +86,18 @@ int main() {
     18
   };
 
-  vector < Materials > materials;
-  materials.assign({
-    materialDatabase["Material A"],
-    materialDatabase["Material B"]
-  });
   commodityDatabase["Chair"] = {
     "Chair",
-    materials,
+    {"Material A", "Material B"},
     13,
     1000,
     100,
     CONSUMER_GOODS_AND_SERVICES
   };
 
-  materials.assign({
-    materialDatabase["Material A"],
-    materialDatabase["Material C"]
-  });
   commodityDatabase["Bread"] = {
     "Bread",
-    materials,
+    {"Material A", "Material C"},
     16,
     5000,
     201,
@@ -114,34 +109,34 @@ int main() {
 
   double totalCost = 0;
   for (const auto & c: commodityVector) {
-    const Commodity commodity = c.second;
+    Commodity & commodity = commodityDatabase[c.first];
     double commodityCost = 0;
     cout << "Commodity: " << commodity.name << endl;
-    for (const auto & material: commodity.materials) {
-      double shortage = materialBalancePlanning(material, commodity.demand);
-    if (shortage > 0) {
-      cout << " Shortage of " << material.name << ": " << shortage << endl;
-      commodityCost += shortage * material.cost;
-      cout << " Cost to fix shortage: " << shortage * material.cost << endl;
-    } else {
-      cout << " No shortage of " << material.name << endl;
+    for (const auto & materialName: commodity.materialNames) {
+      double shortage = materialBalancePlanning(materialName, commodity.demand);
+      if (shortage > 0) {
+        cout << " Shortage of " << materialName << ": " << shortage << endl;
+        commodityCost += shortage * materialDatabase[materialName].cost;
+        cout << " Cost to fix shortage: " << shortage * materialDatabase[materialName].cost << endl;
+      } else {
+        cout << " No shortage of " << materialName << endl;
+      }
+      double actualUsage = min(materialDatabase[materialName].inventory, commodity.demand * materialDatabase[materialName].usage_rate);
+      materialDatabase[materialName].inventory -= actualUsage;
     }
-    double actualUsage = min(materialDatabase[material.name].inventory, commodity.demand * material.usage_rate);
-    materialDatabase[material.name].inventory -= actualUsage;
-  }
 
-  // Checking labor shortage
-  double laborRequired = commodity.laborRequired * commodity.demand;
-  if (commodity.laborAvailable < laborRequired) {
-    cout << " Warning: Labor shortage for " << commodity.name << ". Required: " << laborRequired << ", Available: " << commodity.laborAvailable << endl;
-  }
+    // Checking labor shortage
+    double laborRequired = commodity.laborRequired * commodity.demand;
+    if (commodity.laborAvailable < laborRequired) {
+      cout << " Labor shortage for " << commodity.name << ". Required: " << laborRequired << ", Available: " << commodity.laborAvailable << endl;
+    }
 
-  cout << " Total cost for " << commodity.name << ": " << commodityCost << endl;
-  commodityCost += commodity.laborRequired * commodity.demand;
-  totalCost += commodityCost;
-  double price = calculatePrice(commodity);
-  cout << " Price for " << commodity.name << ": " << price << endl;
-}
-cout << "Total cost for all commodities: " << totalCost << endl;
+    cout << " Total cost for " << commodity.name << ": " << commodityCost << endl;
+    commodityCost += commodity.laborRequired * commodity.demand;
+    totalCost += commodityCost;
+    double price = calculatePrice(commodity);
+    cout << " Price for " << commodity.name << ": " << price << endl;
+  }
+  cout << "Total cost for all commodities: " << totalCost << endl;
   return 0;
 }
