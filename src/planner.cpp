@@ -21,13 +21,13 @@ struct Materials {
   string name;
   double inventory;
   double production_capacity;
-  double usage_rate;
   int cost;
 };
 
 struct Commodity {
   string name;
   vector<string> materialNames;
+  map<string, double> usageRates;
   int laborRequired;
   int laborAvailable;
   double demand;
@@ -37,10 +37,10 @@ struct Commodity {
 map<string, Materials> materialDatabase;
 map<string, Commodity> commodityDatabase;
 
-double materialBalancePlanning(const string & materialName, double demand) {
-  Materials & material = materialDatabase[materialName];
+double materialBalancePlanning(const string& materialName, double demand, double usageRate) {
+  Materials& material = materialDatabase[materialName];
   double shortage = 0.0;
-  double requiredAmount = demand * material.usage_rate;
+  double requiredAmount = demand * usageRate;
   double availableAmount = material.inventory + material.production_capacity;
   if (availableAmount < requiredAmount) {
     shortage = requiredAmount - availableAmount;
@@ -48,11 +48,12 @@ double materialBalancePlanning(const string & materialName, double demand) {
   return shortage;
 }
 
-double calculatePrice(const Commodity & commodity) {
+double calculatePrice(const Commodity& commodity) {
   double totalCost = 0.0;
-  for (const string & materialName : commodity.materialNames) {
-    Materials & material = materialDatabase[materialName];
-    totalCost += material.usage_rate * material.cost;
+  for (const string& materialName : commodity.materialNames) {
+    Materials& material = materialDatabase[materialName];
+    double usageRate = commodity.usageRates.at(materialName);
+    totalCost += usageRate * material.cost;
   }
   return totalCost + commodity.laborRequired;
 }
@@ -68,27 +69,25 @@ int main() {
     "Material A",
     50,
     100,
-    0.5,
     15
   };
   materialDatabase["Material B"] = {
     "Material B",
     40,
     150,
-    0.6,
     14
   };
   materialDatabase["Material C"] = {
     "Material C",
     60,
     200,
-    0.7,
     18
   };
 
   commodityDatabase["Chair"] = {
     "Chair",
     {"Material A", "Material B"},
+    {{"Material A", 0.5}, {"Material B", 0.6}},
     13,
     1000,
     100,
@@ -98,30 +97,33 @@ int main() {
   commodityDatabase["Bread"] = {
     "Bread",
     {"Material A", "Material C"},
+    {{"Material A", 0.5}, {"Material C", 0.7}},
     16,
     5000,
     201,
     BASIC_NEEDS
   };
 
-  vector<pair<string, Commodity>> commodityVector(commodityDatabase.begin(), commodityDatabase.end());
+    vector<pair<string, Commodity>> commodityVector(commodityDatabase.begin(), commodityDatabase.end());
   sort(commodityVector.begin(), commodityVector.end(), compareCommodity);
 
   double totalCost = 0;
-  for (const auto & c: commodityVector) {
-    Commodity & commodity = commodityDatabase[c.first];
+  for (const auto& c : commodityVector) {
+    Commodity& commodity = commodityDatabase[c.first];
     double commodityCost = 0;
     cout << "Commodity: " << commodity.name << endl;
-    for (const auto & materialName: commodity.materialNames) {
-      double shortage = materialBalancePlanning(materialName, commodity.demand);
+    for (const auto& materialName : commodity.materialNames) {
+      double usageRate = commodity.usageRates[materialName]; // Retrieve the specific usage rate for the material
+      double shortage = materialBalancePlanning(materialName, commodity.demand, usageRate);
       if (shortage > 0) {
         cout << " Shortage of " << materialName << ": " << shortage << endl;
         commodityCost += shortage * materialDatabase[materialName].cost;
         cout << " Cost to fix shortage: " << shortage * materialDatabase[materialName].cost << endl;
-      } else {
+      }
+      else {
         cout << " No shortage of " << materialName << endl;
       }
-      double actualUsage = min(materialDatabase[materialName].inventory, commodity.demand * materialDatabase[materialName].usage_rate);
+      double actualUsage = min(materialDatabase[materialName].inventory, commodity.demand * usageRate);
       materialDatabase[materialName].inventory -= actualUsage;
     }
 
