@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <algorithm>
 
 using namespace std;
 
@@ -33,6 +34,14 @@ double materialBalancePlanning(const Materials & material, double demand) {
     shortage = requiredAmount - availableAmount;
   }
   return shortage;
+}
+
+double calculatePrice(const Commodity & commodity) {
+  double totalCost = 0.0;
+  for (const Materials & material : commodity.materials) {
+    totalCost += material.usage_rate * material.cost;
+  }
+  return totalCost + commodity.labor;
 }
 
 int main() {
@@ -67,7 +76,7 @@ int main() {
     "Chair",
     materials,
     13,
-    1100
+    100
   };
 
   materials.assign({
@@ -78,25 +87,31 @@ int main() {
     "Table",
     materials,
     16,
-    200
+    201
   };
 
   double totalCost = 0;
 for (const auto & c: commodityDatabase) {
   const Commodity commodity = c.second;
+  double commodityCost = 0;
   cout << "Commodity: " << commodity.name << endl;
   for (const auto & material: commodity.materials) {
     double shortage = materialBalancePlanning(material, commodity.demand);
     if (shortage > 0) {
       cout << " Shortage of " << material.name << ": " << shortage << endl;
-      totalCost += shortage * material.cost;
+      commodityCost += shortage * material.cost;
       cout << " Cost to fix shortage: " << shortage * material.cost << endl;
     } else {
       cout << " No shortage of " << material.name << endl;
     }
-    materialDatabase[material.name].inventory -= commodity.demand * material.usage_rate;
+    double actualUsage = min(materialDatabase[material.name].inventory, commodity.demand * material.usage_rate);
+    materialDatabase[material.name].inventory -= actualUsage;
   }
-  cout << " Total cost for " << commodity.name << ": " << totalCost << endl;
+  cout << " Total cost for " << commodity.name << ": " << commodityCost << endl;
+  commodityCost += commodity.labor * commodity.demand;
+  totalCost += commodityCost;
+  double price = calculatePrice(commodity);
+  cout << " Price for " << commodity.name << ": " << price << endl;
 }
 cout << "Total cost for all commodities: " << totalCost << endl;
   return 0;
