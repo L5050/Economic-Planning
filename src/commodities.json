@@ -1,0 +1,44 @@
+[
+    {
+        "name": "Chair",
+        "materialNames": ["Material A", "Material B"],
+        "usageRates": {"Material A": 0.5, "Material B": 0.6},
+        "laborRequired": 13,
+        "laborAvailable": 1000,
+        "demand": 100,
+        "priority": 4,
+        "workers": [
+            {
+                "name": "Worker 1",
+                "hoursWorked": 40,
+                "wage": 0
+            },
+            {
+                "name": "Worker 2",
+                "hoursWorked": 40,
+                "wage": 0
+            }
+        ]
+    },
+    {
+        "name": "Bread",
+        "materialNames": ["Material A", "Material C"],
+        "usageRates": {"Material A": 0.5, "Material C": 0.7},
+        "laborRequired": 16,
+        "laborAvailable": 5000,
+        "demand": 201,
+        "priority": 1,
+        "workers": [
+            {
+                "name": "Worker 3",
+                "hoursWorked": 40,
+                "wage": 0
+            },
+            {
+                "name": "Worker 4",
+                "hoursWorked": 40,
+                "wage": 0
+            }
+        ]
+    }
+]

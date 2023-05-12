@@ -1,0 +1,5 @@
+{
+  "Material A": {"inventory": 50, "production_capacity": 100, "cost": 15},
+  "Material B": {"inventory": 40, "production_capacity": 150, "cost": 14},
+  "Material C": {"inventory": 60, "production_capacity": 200, "cost": 18}
+}

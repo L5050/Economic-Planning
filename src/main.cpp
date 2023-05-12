@@ -1,15 +1,17 @@
-//Based on the BFS system under Che Guevara
+//Based on the BFS system under Che Guevara and Cybersyn under Allende
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <map>
 #include <algorithm>
+#include <nlohmann/json.hpp>
 
 #define BASIC_NEEDS 1
 #define ESSENTIAL_UTILITIES 2
-#define STRATEGIC_INVESTMENTS_AND_INITIATIVES 3
-#define EDUCATION_AND_HEALTH 4
-#define CONSUMER_GOODS_AND_SERVICES 5
+#define EDUCATION_AND_HEALTH 3
+#define CONSUMER_GOODS_AND_SERVICES 4
+#define STRATEGIC_INVESTMENTS_AND_INITIATIVES 5
 #define LUXURY_GOODS_AND_SERVICES 6
 #define INFRASTRUCTURE_AND_DEVELOPMENT 7
 #define RESEARCH_AND_INNOVATION 8
@@ -23,7 +25,7 @@ struct Materials {
   double inventory;
   double production_capacity;
   int cost;
-};
+}; //materials are a different struct but are still centrally controlled
 
 struct Worker {
   string name;
@@ -37,7 +39,7 @@ struct Commodity {
   map<string, double> usageRates;
   int laborRequired;
   int laborAvailable;
-  double demand;
+  double demand; //future demand specifically, should be calculated based on previous demand
   int priority;
   vector<Worker> workers;
 };
@@ -78,7 +80,7 @@ double calculatePrice(const Commodity& commodity) {
     totalCost += usageRate * material.cost;
   }
   return totalCost + commodity.laborRequired;
-}
+} //material costs and wages are paid for by a central bank
 
 bool compareCommodity(const pair<string, Commodity>& a, const pair<string, Commodity>& b) {
   if (a.second.priority == b.second.priority)
@@ -86,57 +88,50 @@ bool compareCommodity(const pair<string, Commodity>& a, const pair<string, Commo
   return a.second.priority < b.second.priority;
 }
 
+void loadData() {
+  // Load the JSON files into nlohmann::json objects
+  ifstream materialFile("materials.json");
+  ifstream commodityFile("commodities.json");
+  nlohmann::json materialJson, commodityJson;
+  materialFile >> materialJson;
+  commodityFile >> commodityJson;
+
+  // Populate the materialDatabase from materials.json
+  for (const auto& item : materialJson.items()) {
+    Materials m;
+    m.name = item.key();
+    m.inventory = item.value()["inventory"];
+    m.production_capacity = item.value()["production_capacity"];
+    m.cost = item.value()["cost"];
+    materialDatabase[m.name] = m;
+  }
+
+  // Populate the commodityDatabase from commodities.json
+  for (const auto& item : commodityJson.items()) {
+    Commodity c;
+    c.name = item.key();
+    c.materialNames = item.value()["materialNames"].get<vector<string>>();
+    for (const auto& rate : item.value()["usageRates"].items()) {
+      c.usageRates[rate.key()] = rate.value();
+    }
+    c.laborRequired = item.value()["laborRequired"];
+    c.laborAvailable = item.value()["laborAvailable"];
+    c.demand = item.value()["demand"];
+    c.priority = item.value()["priority"];
+    for (const auto& worker : item.value()["workers"]) {
+      c.workers.push_back(Worker{worker["name"], worker["hoursWorked"], worker["wage"]});
+    }
+    commodityDatabase[c.name] = c;
+  }
+}
+
 int main() {
-  materialDatabase["Material A"] = {
-    "Material A",
-    50,
-    100,
-    15
-  };
-  materialDatabase["Material B"] = {
-    "Material B",
-    40,
-    150,
-    14
-  };
-  materialDatabase["Material C"] = {
-    "Material C",
-    60,
-    200,
-    18
-  };
 
-  vector<Worker> chairWorkers = {
-    {"Worker 1", 40, 0},
-    {"Worker 2", 40, 0}
-  };
+  loadData();
+    streambuf* oldCoutStreamBuf = cout.rdbuf();
+    ofstream fileOut("out.txt");
+    cout.rdbuf(fileOut.rdbuf());
 
-  vector<Worker> breadWorkers = {
-    {"Worker 3", 40, 0},
-    {"Worker 4", 40, 0}
-  };
-
-  commodityDatabase["Chair"] = {
-    "Chair",
-    {"Material A", "Material B"},
-    {{"Material A", 0.5}, {"Material B", 0.6}},
-    13,
-    1000,
-    100,
-    CONSUMER_GOODS_AND_SERVICES,
-    chairWorkers,
-  };
-
-  commodityDatabase["Bread"] = {
-    "Bread",
-    {"Material A", "Material C"},
-    {{"Material A", 0.5}, {"Material C", 0.7}},
-    16,
-    5000,
-    201,
-    BASIC_NEEDS,
-    breadWorkers,
-  };
   vector<pair<string, Commodity>> commodityVector(commodityDatabase.begin(), commodityDatabase.end());
   sort(commodityVector.begin(), commodityVector.end(), compareCommodity);
 
@@ -146,7 +141,7 @@ int main() {
     double commodityCost = 0;
     cout << "Commodity: " << commodity.name << endl;
     for (const auto& materialName : commodity.materialNames) {
-      double usageRate = commodity.usageRates[materialName]; // Retrieve the specific usage rate for the material
+      double usageRate = commodity.usageRates[materialName];
       double shortage = materialBalancePlanning(materialName, commodity.demand, usageRate);
       if (shortage > 0) {
         cout << " Shortage of " << materialName << ": " << shortage << endl;
@@ -179,5 +174,6 @@ int main() {
     }
   }
   cout << "Total cost for all commodities: " << totalCost << endl;
+  cout.rdbuf(oldCoutStreamBuf);
   return 0;
 }
