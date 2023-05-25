@@ -1,16 +1,16 @@
-Commodity: 1
+Commodity: Bread
  No shortage of Material A
  No shortage of Material C
- Total cost for 1: 0
- Price for 1: 36.1
+ Total cost for Bread: 0
+ Price for Bread: 36.1
  Wage for Worker 3: 1608
  Wage for Worker 4: 1608
-Commodity: 0
+Commodity: Chair
  No shortage of Material A
  No shortage of Material B
- Labor shortage for 0. Required: 1300, Available: 1000
- Total cost for 0: 0
- Price for 0: 28.9
+ Labor shortage for Chair. Required: 1300, Available: 1000
+ Total cost for Chair: 0
+ Price for Chair: 28.9
  Wage for Worker 1: 650
  Wage for Worker 2: 650
 Total cost for all commodities: 4516

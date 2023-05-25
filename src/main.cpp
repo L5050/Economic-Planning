@@ -109,7 +109,7 @@ void loadData() {
   // Populate the commodityDatabase from commodities.json
   for (const auto& item : commodityJson.items()) {
     Commodity c;
-    c.name = item.key();
+    c.name = item.value()["name"];
     c.materialNames = item.value()["materialNames"].get<vector<string>>();
     for (const auto& rate : item.value()["usageRates"].items()) {
       c.usageRates[rate.key()] = rate.value();
