@@ -1,4 +1,3 @@
-//Based on the BFS system under Che Guevara and Cybersyn under Allende
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -24,8 +23,8 @@ struct Materials {
   string name;
   double inventory;
   double production_capacity;
-  int cost;
-}; //materials are a different struct but are still centrally controlled
+  float cost; // updated to float
+};
 
 struct Worker {
   string name;
@@ -39,7 +38,7 @@ struct Commodity {
   map<string, double> usageRates;
   int laborRequired;
   int laborAvailable;
-  double demand; //future demand specifically, should be calculated based on previous demand
+  double demand;
   int priority;
   vector<Worker> workers;
 };
@@ -80,7 +79,7 @@ double calculatePrice(const Commodity& commodity) {
     totalCost += usageRate * material.cost;
   }
   return totalCost + commodity.laborRequired;
-} //material costs and wages are paid for by a central bank
+}
 
 bool compareCommodity(const pair<string, Commodity>& a, const pair<string, Commodity>& b) {
   if (a.second.priority == b.second.priority)
@@ -89,14 +88,12 @@ bool compareCommodity(const pair<string, Commodity>& a, const pair<string, Commo
 }
 
 void loadData() {
-  // Load the JSON files into nlohmann::json objects
   ifstream materialFile("materials.json");
   ifstream commodityFile("commodities.json");
   nlohmann::json materialJson, commodityJson;
   materialFile >> materialJson;
   commodityFile >> commodityJson;
 
-  // Populate the materialDatabase from materials.json
   for (const auto& item : materialJson.items()) {
     Materials m;
     m.name = item.key();
@@ -106,7 +103,6 @@ void loadData() {
     materialDatabase[m.name] = m;
   }
 
-  // Populate the commodityDatabase from commodities.json
   for (const auto& item : commodityJson.items()) {
     Commodity c;
     c.name = item.value()["name"];
@@ -128,9 +124,9 @@ void loadData() {
 int main() {
 
   loadData();
-    streambuf* oldCoutStreamBuf = cout.rdbuf();
-    ofstream fileOut("out.txt");
-    cout.rdbuf(fileOut.rdbuf());
+  streambuf* oldCoutStreamBuf = cout.rdbuf();
+  ofstream fileOut("out.txt");
+  cout.rdbuf(fileOut.rdbuf());
 
   vector<pair<string, Commodity>> commodityVector(commodityDatabase.begin(), commodityDatabase.end());
   sort(commodityVector.begin(), commodityVector.end(), compareCommodity);
@@ -155,7 +151,6 @@ int main() {
       materialDatabase[materialName].inventory -= actualUsage;
     }
 
-    // Checking labor shortage
     double laborRequired = commodity.laborRequired * commodity.demand;
     if (commodity.laborAvailable < laborRequired) {
       cout << " Labor shortage for " << commodity.name << ". Required: " << laborRequired << ", Available: " << commodity.laborAvailable << endl;
@@ -167,7 +162,6 @@ int main() {
     double price = calculatePrice(commodity);
     cout << " Price for " << commodity.name << ": " << price << endl;
 
-    // Calculate wages for this commodity
     calculateWages(commodity.workers, commodity.laborRequired, commodity.demand);
     for (const auto& worker : commodity.workers) {
       cout << " Wage for " << worker.name << ": " << worker.wage << endl;
