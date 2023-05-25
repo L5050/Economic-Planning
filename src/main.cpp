@@ -161,9 +161,9 @@ int main() {
       cout << " Labor shortage for " << commodity.name << ". Required: " << laborRequired << ", Available: " << commodity.laborAvailable << endl;
     }
 
-    cout << " Total cost for " << commodity.name << ": " << commodityCost << endl;
     commodityCost += commodity.laborRequired * commodity.demand;
     totalCost += commodityCost;
+    cout << " Total cost for " << commodity.name << ": " << commodityCost << endl;
     double price = calculatePrice(commodity);
     cout << " Price for " << commodity.name << ": " << price << endl;
 
