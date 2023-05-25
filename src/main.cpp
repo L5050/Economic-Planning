@@ -88,37 +88,64 @@ bool compareCommodity(const pair<string, Commodity>& a, const pair<string, Commo
 }
 
 void loadData() {
-  ifstream materialFile("materials.json");
-  ifstream commodityFile("commodities.json");
-  nlohmann::json materialJson, commodityJson;
-  materialFile >> materialJson;
-  commodityFile >> commodityJson;
+    ifstream materialFile("materials.json");
+    ifstream commodityFile("commodities.json");
 
-  for (const auto& item : materialJson.items()) {
-    Materials m;
-    m.name = item.key();
-    m.inventory = item.value()["inventory"];
-    m.production_capacity = item.value()["production_capacity"];
-    m.cost = item.value()["cost"];
-    materialDatabase[m.name] = m;
-  }
+    // Check if files open successfully
+    if (!materialFile.is_open() || !commodityFile.is_open()) {
+        cerr << "Error opening files. Please ensure the 'materials.json' and 'commodities.json' files exist in the correct location." << endl;
+        exit(EXIT_FAILURE);
+    }
 
-  for (const auto& item : commodityJson.items()) {
-    Commodity c;
-    c.name = item.value()["name"];
-    c.materialNames = item.value()["materialNames"].get<vector<string>>();
-    for (const auto& rate : item.value()["usageRates"].items()) {
-      c.usageRates[rate.key()] = rate.value();
+    nlohmann::json materialJson, commodityJson;
+
+    try {
+        materialFile >> materialJson;
+        commodityFile >> commodityJson;
+    } catch (nlohmann::json::parse_error &e) {
+        cerr << "Parse error: " << e.what() << '\n';
+        exit(EXIT_FAILURE);
     }
-    c.laborRequired = item.value()["laborRequired"];
-    c.laborAvailable = item.value()["laborAvailable"];
-    c.demand = item.value()["demand"];
-    c.priority = item.value()["priority"];
-    for (const auto& worker : item.value()["workers"]) {
-      c.workers.push_back(Worker{worker["name"], worker["hoursWorked"], worker["wage"]});
+
+    for (const auto &item : materialJson.items()) {
+        Materials m;
+        try {
+            m.name = item.key();
+            m.inventory = item.value().at("inventory");
+            m.production_capacity = item.value().at("production_capacity");
+            m.cost = item.value().at("cost");
+        } catch (nlohmann::json::out_of_range &e) {
+            cerr << "Json key error in materials.json: " << e.what() << '\n';
+            exit(EXIT_FAILURE);
+        }
+        materialDatabase[m.name] = m;
     }
-    commodityDatabase[c.name] = c;
-  }
+
+    for (const auto &item : commodityJson.items()) {
+        Commodity c;
+        try {
+            c.name = item.value().at("name");
+            c.materialNames = item.value().at("materialNames").get<vector<string>>();
+            for (const auto &rate : item.value().at("usageRates").items()) {
+                c.usageRates[rate.key()] = rate.value();
+            }
+            c.laborRequired = item.value().at("laborRequired");
+            c.laborAvailable = item.value().at("laborAvailable");
+            c.demand = item.value().at("demand");
+            c.priority = item.value().at("priority");
+            for (const auto &worker : item.value().at("workers")) {
+                c.workers.push_back(Worker{worker.at("name"), worker.at("hoursWorked"), worker.at("wage")});
+            }
+        } catch (nlohmann::json::out_of_range &e) {
+            cerr << "Json key error in commodities.json: " << e.what() << '\n';
+            exit(EXIT_FAILURE);
+        }
+        commodityDatabase[c.name] = c;
+    }
+
+    // Close files
+    materialFile.close();
+    commodityFile.close();
 }
 
 int main() {
